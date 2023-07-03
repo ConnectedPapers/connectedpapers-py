@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "connectedpapers-py"
+version = "0.1.0"
+description = "The official python client for the connected papers API."
+authors = ["ConnectedPapersAdmin <admin@connectedpapers.com>", "KanHar <knaan.harpaz@gmail.com>"]
+readme = "README.md"
+packages = [{include = "connectedpapers"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1"
+requests = ">=2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+mypy = "^1.4.1"
+isort = "^5.12.0"
+flake8 = "^6.0.0"
+flake8-black = "^0.3.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
