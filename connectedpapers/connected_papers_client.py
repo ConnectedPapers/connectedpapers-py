@@ -1,9 +1,8 @@
 import asyncio
 import dataclasses
 from enum import Enum
-from typing import Optional, Any, AsyncGenerator, AsyncIterator
+from typing import Optional, Any, AsyncIterator
 import aiohttp
-from concurrent.futures import Future
 
 from .consts import CONNECTED_PAPERS_REST_API, ACCESS_TOKEN
 
@@ -63,7 +62,7 @@ class ConnectedPapersClient:
                     data = await resp.json()
                     fresh_only = True
                     response = GraphResponse(**data)
-                    if response.status in GraphResponseStatuses.__dict__:
+                    if response.status in GraphResponseStatuses.__dict__:  # type: ignore
                         response.status = GraphResponseStatuses[response.status]  # type: ignore
                     else:
                         response.status = GraphResponseStatuses.ERROR
@@ -75,8 +74,12 @@ class ConnectedPapersClient:
                     response.graph_json = newest_graph
                     yield response
 
-    async def get_graph_async(self, paper_id: str, fresh_only: bool = False) -> GraphResponse:
-        generator = self.get_graph_async_generator(paper_id, fresh_only=fresh_only, wait_for_fresh=fresh_only)
+    async def get_graph_async(
+        self, paper_id: str, fresh_only: bool = False
+    ) -> GraphResponse:
+        generator = self.get_graph_async_generator(
+            paper_id, fresh_only=fresh_only, wait_for_fresh=fresh_only
+        )
         result = GraphResponse(
             status=GraphResponseStatuses.ERROR, graph_json=None, progress=None
         )

@@ -370,6 +370,23 @@ tomli = {version = "*", markers = "python_version < \"3.11\""}
 develop = ["build", "twine"]
 
 [[package]]
+name = "flake8-pyproject"
+version = "1.2.3"
+description = "Flake8 plug-in loading the configuration from pyproject.toml"
+optional = false
+python-versions = ">= 3.6"
+files = [
+    {file = "flake8_pyproject-1.2.3-py3-none-any.whl", hash = "sha256:6249fe53545205af5e76837644dc80b4c10037e73a0e5db87ff562d75fb5bd4a"},
+]
+
+[package.dependencies]
+Flake8 = ">=5"
+TOMLi = {version = "*", markers = "python_version < \"3.11\""}
+
+[package.extras]
+dev = ["pyTest", "pyTest-cov"]
+
+[[package]]
 name = "frozenlist"
 version = "1.3.3"
 description = "A list-like structure which implements collections.abc.MutableSequence"
@@ -888,4 +905,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1"
-content-hash = "805bb9ccadff0b79b41f46cce386317f6e78cf95688853c0adf43dad759e644b"
+content-hash = "9cf893001e8cb72cfe8284b43544cc31134eec5101c9f9d2376c9796b9603d37"
