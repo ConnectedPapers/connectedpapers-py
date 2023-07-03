@@ -8,7 +8,7 @@ on:
 
 jobs:
   tests:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9, 3.10, 3.11, 3.12]
@@ -35,3 +35,6 @@ jobs:
 
     - name: Run flake8
       run: poetry run flake8 connectedpapers tests
+
+    - name: Run tests
+      run: poetry run pytest tests
