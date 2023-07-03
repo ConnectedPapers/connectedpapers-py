@@ -1,10 +1,11 @@
 import asyncio
 import dataclasses
 from enum import Enum
-from typing import Optional, Any, AsyncIterator
+from typing import Any, AsyncIterator, Optional
+
 import aiohttp
 
-from .consts import CONNECTED_PAPERS_REST_API, ACCESS_TOKEN
+from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
 
 
 class GraphResponseStatuses(Enum):
