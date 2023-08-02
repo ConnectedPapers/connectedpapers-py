@@ -42,21 +42,27 @@ end_response_statuses = {
     GraphResponseStatuses.OUT_OF_REQUESTS,
 }
 
+SLEEP_TIME_BETWEEN_CHECKS = 1.0
+
 
 class ConnectedPapersClient:
-    def __init__(self) -> None:
-        pass
+    def __init__(
+        self,
+        access_token: str = ACCESS_TOKEN,
+        server_addr: str = CONNECTED_PAPERS_REST_API,
+    ) -> None:
+        self.access_token = access_token
+        self.server_addr = server_addr
 
-    @staticmethod
-    async def get_graph_async_generator(
-        paper_id: str, fresh_only: bool = False, wait_for_fresh: bool = True
+    async def get_graph_async_iterator(
+        self, paper_id: str, fresh_only: bool = False, loop_until_fresh: bool = True
     ) -> AsyncIterator[GraphResponse]:
         async with aiohttp.ClientSession() as session:
             newest_graph: Optional[Any] = None
             while True:
                 async with session.get(
-                    f"{CONNECTED_PAPERS_REST_API}/papers-api/{int(fresh_only)}/{paper_id}",
-                    headers={"X-Api-Key": ACCESS_TOKEN},
+                    f"{self.server_addr}/papers-api/{int(fresh_only)}/{paper_id}",
+                    headers={"X-Api-Key": self.access_token},
                 ) as resp:
                     if resp.status != 200:
                         raise RuntimeError(f"Bad response: {resp.status}")
@@ -69,17 +75,18 @@ class ConnectedPapersClient:
                         response.status = GraphResponseStatuses.ERROR
                     if response.graph_json is not None:
                         newest_graph = response.graph_json
-                    if response.status in end_response_statuses or not wait_for_fresh:
+                    if response.status in end_response_statuses or not loop_until_fresh:
                         yield response
                         return
                     response.graph_json = newest_graph
                     yield response
+                    await asyncio.sleep(SLEEP_TIME_BETWEEN_CHECKS)
 
     async def get_graph_async(
-        self, paper_id: str, fresh_only: bool = False
+        self, paper_id: str, fresh_only: bool = True
     ) -> GraphResponse:
-        generator = self.get_graph_async_generator(
-            paper_id, fresh_only=fresh_only, wait_for_fresh=fresh_only
+        generator = self.get_graph_async_iterator(
+            paper_id, fresh_only=fresh_only, loop_until_fresh=fresh_only
         )
         result = GraphResponse(
             status=GraphResponseStatuses.ERROR, graph_json=None, progress=None
@@ -88,7 +95,7 @@ class ConnectedPapersClient:
             result = response
         return result
 
-    def get_graph_sync(self, paper_id: str, fresh_only: bool = False) -> GraphResponse:
+    def get_graph_sync(self, paper_id: str, fresh_only: bool = True) -> GraphResponse:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
