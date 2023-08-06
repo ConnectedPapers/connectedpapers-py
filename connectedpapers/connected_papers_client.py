@@ -4,8 +4,10 @@ from enum import Enum
 from typing import Any, AsyncIterator, Optional
 
 import aiohttp
+import dacite
 
 from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
+from .graph import Graph
 
 
 class GraphResponseStatuses(Enum):
@@ -28,7 +30,7 @@ class GraphResponse:
     """A response for the external graphs API"""
 
     status: GraphResponseStatuses
-    graph_json: Optional[Any] = None
+    graph_json: Optional[Graph] = None
     progress: Optional[float] = None
 
 
@@ -67,12 +69,16 @@ class ConnectedPapersClient:
                     if resp.status != 200:
                         raise RuntimeError(f"Bad response: {resp.status}")
                     data = await resp.json()
+                    if data["status"] not in GraphResponseStatuses.__dict__:
+                        data["status"] = GraphResponseStatuses.ERROR.value
                     fresh_only = True
-                    response = GraphResponse(**data)
-                    if response.status in GraphResponseStatuses.__dict__:  # type: ignore
-                        response.status = GraphResponseStatuses[response.status]  # type: ignore
-                    else:
-                        response.status = GraphResponseStatuses.ERROR
+                    response = dacite.from_dict(
+                        data_class=GraphResponse,
+                        data=data,
+                        config=dacite.Config(
+                            type_hooks={GraphResponseStatuses: GraphResponseStatuses}
+                        ),
+                    )
                     if response.graph_json is not None:
                         newest_graph = response.graph_json
                     if response.status in end_response_statuses or not loop_until_fresh:
