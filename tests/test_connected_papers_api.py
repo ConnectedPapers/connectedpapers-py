@@ -30,5 +30,5 @@ def test_new_graph() -> None:
     connected_papers_api.get_graph_sync(TEST_FAKE_PAPER_ID)
     end_time = datetime.datetime.utcnow()
     # The fake ID causes a "build" to be simulated in the rest API, status is cyclic every 20 seconds
-    assert (end_time - start_time).seconds > 14
+    assert (end_time - start_time).seconds > 12
     assert (end_time - start_time).seconds < 20

@@ -45,6 +45,7 @@ end_response_statuses = {
 }
 
 SLEEP_TIME_BETWEEN_CHECKS = 1.0
+SLEEP_TIME_AFTER_ERROR = 5.0
 
 
 class ConnectedPapersClient:
@@ -59,34 +60,47 @@ class ConnectedPapersClient:
     async def get_graph_async_iterator(
         self, paper_id: str, fresh_only: bool = False, loop_until_fresh: bool = True
     ) -> AsyncIterator[GraphResponse]:
-        async with aiohttp.ClientSession() as session:
-            newest_graph: Optional[Any] = None
-            while True:
-                async with session.get(
-                    f"{self.server_addr}/papers-api/{int(fresh_only)}/{paper_id}",
-                    headers={"X-Api-Key": self.access_token},
-                ) as resp:
-                    if resp.status != 200:
-                        raise RuntimeError(f"Bad response: {resp.status}")
-                    data = await resp.json()
-                    if data["status"] not in GraphResponseStatuses.__dict__:
-                        data["status"] = GraphResponseStatuses.ERROR.value
-                    fresh_only = True
-                    response = dacite.from_dict(
-                        data_class=GraphResponse,
-                        data=data,
-                        config=dacite.Config(
-                            type_hooks={GraphResponseStatuses: GraphResponseStatuses}
-                        ),
-                    )
-                    if response.graph_json is not None:
-                        newest_graph = response.graph_json
-                    if response.status in end_response_statuses or not loop_until_fresh:
-                        yield response
-                        return
-                    response.graph_json = newest_graph
-                    yield response
-                    await asyncio.sleep(SLEEP_TIME_BETWEEN_CHECKS)
+        retry_counter = 3
+        while retry_counter > 0:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    newest_graph: Optional[Any] = None
+                    while True:
+                        async with session.get(
+                            f"{self.server_addr}/papers-api/{int(fresh_only)}/{paper_id}",
+                            headers={"X-Api-Key": self.access_token},
+                        ) as resp:
+                            if resp.status != 200:
+                                raise RuntimeError(f"Bad response: {resp.status}")
+                            data = await resp.json()
+                            if data["status"] not in GraphResponseStatuses.__dict__:
+                                data["status"] = GraphResponseStatuses.ERROR.value
+                            fresh_only = True
+                            response = dacite.from_dict(
+                                data_class=GraphResponse,
+                                data=data,
+                                config=dacite.Config(
+                                    type_hooks={
+                                        GraphResponseStatuses: GraphResponseStatuses
+                                    }
+                                ),
+                            )
+                            if response.graph_json is not None:
+                                newest_graph = response.graph_json
+                            if (
+                                response.status in end_response_statuses
+                                or not loop_until_fresh
+                            ):
+                                yield response
+                                return
+                            response.graph_json = newest_graph
+                            yield response
+                            await asyncio.sleep(SLEEP_TIME_BETWEEN_CHECKS)
+            except Exception as e:
+                retry_counter -= 1
+                if retry_counter == 0:
+                    raise e
+                await asyncio.sleep(SLEEP_TIME_AFTER_ERROR)
 
     async def get_graph_async(
         self, paper_id: str, fresh_only: bool = True

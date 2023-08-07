@@ -39,7 +39,7 @@ class BasePaper:
     corpusid: int
     doi: Optional[str]
     externalIds: ExternalIDs
-    fieldsOfStudy: List[str]
+    fieldsOfStudy: Optional[List[str]]
     id: PaperID
     isOpenAccess: Optional[bool]
     journalName: Optional[str]
