@@ -27,6 +27,9 @@ jobs:
         python -m pip install poetry
         python -m poetry install
 
+    - name: Run black
+      run: python -m poetry run black --check .
+
     - name: Run mypy
       run: python -m poetry run mypy --strict connectedpapers tests
 
