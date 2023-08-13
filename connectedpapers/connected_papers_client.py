@@ -125,7 +125,7 @@ class ConnectedPapersClient:
         finally:
             loop.close()
 
-    async def async_get_remaining_usages(self) -> int:
+    async def get_remaining_usages_async(self) -> int:
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.server_addr}/papers-api/remaining-usages",
@@ -136,15 +136,15 @@ class ConnectedPapersClient:
                 data = await resp.json()
                 return typing.cast(int, data["remaining_uses"])
 
-    def sync_get_remaining_usages(self) -> int:
+    def get_remaining_usages_sync(self) -> int:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            return loop.run_until_complete(self.async_get_remaining_usages())
+            return loop.run_until_complete(self.get_remaining_usages_async())
         finally:
             loop.close()
 
-    async def async_get_free_access_papers(self) -> List[PaperID]:
+    async def get_free_access_papers_async(self) -> List[PaperID]:
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.server_addr}/papers-api/free-access-papers",
@@ -155,10 +155,10 @@ class ConnectedPapersClient:
                 data = await resp.json()
                 return typing.cast(List[PaperID], data["papers"])
 
-    def sync_get_free_access_papers(self) -> List[PaperID]:
+    def get_free_access_papers_sync(self) -> List[PaperID]:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            return loop.run_until_complete(self.async_get_free_access_papers())
+            return loop.run_until_complete(self.get_free_access_papers_async())
         finally:
             loop.close()
