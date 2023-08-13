@@ -21,3 +21,5 @@ graph = client.get_graph_sync(DEEPFRUITS_PAPER_ID)
 assert graph.graph_json.start_id == DEEPFRUITS_PAPER_ID
 ```
 See more on the [usage samples](https://github.com/ConnectedPapers/connectedpapers-py/tree/master/usage_samples) directory.
+
+See graph structure at [graph.py](https://github.com/ConnectedPapers/connectedpapers-py/blob/master/connectedpapers/graph.py).
