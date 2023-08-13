@@ -27,4 +27,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.flake8]
-ignore = ["E501"]
+ignore = ["E501", "W503"]

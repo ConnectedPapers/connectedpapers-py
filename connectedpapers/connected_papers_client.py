@@ -1,13 +1,14 @@
 import asyncio
 import dataclasses
+import typing
 from enum import Enum
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator, List, Optional
 
 import aiohttp
 import dacite
 
 from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
-from .graph import Graph
+from .graph import Graph, PaperID
 
 
 class GraphResponseStatuses(Enum):
@@ -32,6 +33,7 @@ class GraphResponse:
     status: GraphResponseStatuses
     graph_json: Optional[Graph] = None
     progress: Optional[float] = None
+    remaining_requests: Optional[int] = None
 
 
 end_response_statuses = {
@@ -67,7 +69,7 @@ class ConnectedPapersClient:
                     newest_graph: Optional[Any] = None
                     while True:
                         async with session.get(
-                            f"{self.server_addr}/papers-api/{int(fresh_only)}/{paper_id}",
+                            f"{self.server_addr}/papers-api/graph/{int(fresh_only)}/{paper_id}",
                             headers={"X-Api-Key": self.access_token},
                         ) as resp:
                             if resp.status != 200:
@@ -120,5 +122,43 @@ class ConnectedPapersClient:
         asyncio.set_event_loop(loop)
         try:
             return loop.run_until_complete(self.get_graph_async(paper_id, fresh_only))
+        finally:
+            loop.close()
+
+    async def async_get_remaining_usages(self) -> int:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{self.server_addr}/papers-api/remaining-usages",
+                headers={"X-Api-Key": self.access_token},
+            ) as resp:
+                if resp.status != 200:
+                    raise RuntimeError(f"Bad response: {resp.status}")
+                data = await resp.json()
+                return typing.cast(int, data["remaining_uses"])
+
+    def sync_get_remaining_usages(self) -> int:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(self.async_get_remaining_usages())
+        finally:
+            loop.close()
+
+    async def async_get_free_access_papers(self) -> List[PaperID]:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{self.server_addr}/papers-api/free-access-papers",
+                headers={"X-Api-Key": self.access_token},
+            ) as resp:
+                if resp.status != 200:
+                    raise RuntimeError(f"Bad response: {resp.status}")
+                data = await resp.json()
+                return typing.cast(List[PaperID], data["papers"])
+
+    def sync_get_free_access_papers(self) -> List[PaperID]:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(self.async_get_free_access_papers())
         finally:
             loop.close()

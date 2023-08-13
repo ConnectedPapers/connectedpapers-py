@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="Black">
-    <option name="enabledOnSave" value="true" />
-    <option name="pathToExecutable" value="$USER_HOME$/.pyenv/shims/black" />
-    <option name="sdkUUID" value="58273427-c5b7-447d-a96c-b9a2edce9ce3" />
-  </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.8 (connectedpapers-py)" project-jdk-type="Python SDK" />
-</project>

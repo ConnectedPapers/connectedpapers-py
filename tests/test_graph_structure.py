@@ -4,6 +4,7 @@ import os
 import pytest
 
 from connectedpapers import ConnectedPapersClient
+from connectedpapers.connected_papers_client import GraphResponseStatuses
 
 DEEPFRUITS_PAPER_ID = "9397e7acd062245d37350f5c05faf56e9cfae0d6"
 
@@ -13,9 +14,14 @@ def test_graph_structure() -> None:
     deepfruits_graph = connected_papers_api.get_graph_sync(
         DEEPFRUITS_PAPER_ID, fresh_only=True
     )
-    assert deepfruits_graph.graph_json.start_id == DEEPFRUITS_PAPER_ID
-    assert len(deepfruits_graph.graph_json.nodes) > 10
-    assert len(deepfruits_graph.graph_json.edges) > 100
+    graph = deepfruits_graph.graph_json
+    assert graph is not None
+    assert graph.start_id is not None
+    assert graph.nodes is not None
+    assert graph.edges is not None
+    assert graph.start_id == DEEPFRUITS_PAPER_ID
+    assert len(graph.nodes) > 10
+    assert len(graph.edges) > 100
 
 
 PAPER_IDS_LIST = [
@@ -44,4 +50,10 @@ async def test_get_many_papers() -> None:
     for paper_id in PAPER_IDS_LIST:
         promises.append(connected_papers_api.get_graph_async(paper_id))
     results = await asyncio.gather(*promises)
-    x = 1
+    assert all(
+        [
+            result.status
+            in {GraphResponseStatuses.OLD_GRAPH, GraphResponseStatuses.FRESH_GRAPH}
+            for result in results
+        ]
+    )
