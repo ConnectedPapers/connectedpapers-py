@@ -23,3 +23,18 @@ assert graph.graph_json.start_id == DEEPFRUITS_PAPER_ID
 See more on the [usage samples](https://github.com/ConnectedPapers/connectedpapers-py/tree/master/usage_samples) directory.
 
 See graph structure at [graph.py](https://github.com/ConnectedPapers/connectedpapers-py/blob/master/connectedpapers/graph.py).
+
+# Configuring server address and API key
+There are multiple ways to configure the server address and API key:
+1. Set the environment variables `CONNECTED_PAPERS_SERVER_ADDRESS` and `CONNECTED_PAPERS_API_KEY`:
+    ```bash
+   export CONNECTED_PAPERS_REST_API="https://api.connectedpapers.com"
+   export CONNECTED_PAPERS_API_KEY="YOUR_API_KEY"
+    ```
+   (You do not need to configure the server address, uses the correct one by default)
+2. Send parameters to the client's constructur:
+   ```python
+   from connectedpapers import ConnectedPapersClient
+   
+   client = ConnectedPapersClient(access_token="YOUR_API_KEY", server_addr="https://api.connectedpapers.com")
+   ```
