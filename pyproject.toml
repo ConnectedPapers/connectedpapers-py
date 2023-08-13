@@ -5,6 +5,8 @@ description = "The official python client for the connected papers API."
 authors = ["ConnectedPapersAdmin <admin@connectedpapers.com>", "KanHar <knaan.harpaz@gmail.com>"]
 readme = "README.md"
 packages = [{include = "connectedpapers"}]
+repository = "https://github.com/ConnectedPapers/connectedpapers-py/"
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1"
