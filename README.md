@@ -3,7 +3,7 @@ The official python client for the connected papers API.
 
 # Installation
 ```bash
-pip install connectedpapers
+pip install connectedpapers-py
 ```
 
 # Usage
@@ -20,4 +20,4 @@ print(f"Free access papers: {free_access_papers}")
 graph = client.get_graph_sync(DEEPFRUITS_PAPER_ID)
 assert graph.graph_json.start_id == DEEPFRUITS_PAPER_ID
 ```
-See more on the [usage samples](./usage_samples) directory.
+See more on the [usage samples](https://github.com/ConnectedPapers/connectedpapers-py/tree/master/usage_samples) directory.
