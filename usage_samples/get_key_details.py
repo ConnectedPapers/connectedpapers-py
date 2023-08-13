@@ -12,6 +12,7 @@ def main() -> int:
     free_access_papers = client.sync_get_free_access_papers()
     print(f"Free access papers: {free_access_papers}")
     graph = client.get_graph_sync(DEEPFRUITS_PAPER_ID)
+    assert graph.graph_json is not None
     assert graph.graph_json.start_id == DEEPFRUITS_PAPER_ID
     return 0
 
