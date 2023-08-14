@@ -85,3 +85,63 @@ async def usage_sample() -> None:
 
 usage_sample()
 ```
+
+## Async iterator API
+The client offers support for Python's asynchronous iterator 
+access to the API, allowing for real-time monitoring of
+the progress of graph builds and retrieval of both current
+and rebuilt papers.
+
+The method `get_graph_async_iterator` returns an asynchronous
+iterator, generating values of the `GraphResponse`
+type. Here's what the `GraphResponse` and related
+`GraphResponseStatuses` looks like in Python:
+```python
+class GraphResponseStatuses(Enum):
+    BAD_ID = "BAD_ID"
+    ERROR = "ERROR"
+    NOT_IN_DB = "NOT_IN_DB"
+    OLD_GRAPH = "OLD_GRAPH"
+    FRESH_GRAPH = "FRESH_GRAPH"
+    IN_PROGRESS = "IN_PROGRESS"
+    QUEUED = "QUEUED"
+    BAD_TOKEN = "BAD_TOKEN"
+    BAD_REQUEST = "BAD_REQUEST"
+    OUT_OF_REQUESTS = "OUT_OF_REQUESTS"
+
+
+@dataclasses.dataclass
+class GraphResponse:
+    status: GraphResponseStatuses
+    graph_json: Optional[Graph] = None
+    progress: Optional[float] = None
+    remaining_requests: Optional[int] = None
+```
+Once the status falls into one of the terminal states (BAD_ID, ERROR, NOT_IN_DB, BAD_TOKEN, BAD_REQUEST, OUT_OF_REQUESTS), the iterator will cease to yield further values.
+
+Here's the signature for invoking this method:
+
+```python
+class ConnectedPapersClient:
+    # ...
+    async def get_graph_async_iterator(
+        self, paper_id: str, fresh_only: bool = False, loop_until_fresh: bool = True
+    ) -> AsyncIterator[GraphResponse]:
+        # ...
+```
+Call this method with fresh_only=False and loop_until_fresh=True
+to request the existing graph and continue waiting
+for a rebuild if necessary.
+
+The initial response will contain the status GraphResponseStatuses.OLD_GRAPH,
+then transition through GraphResponseStatuses.QUEUED and
+GraphResponseStatuses.IN_PROGRESS, with the progress
+field reflecting the percentage of the graph build
+completed. Upon completion of the rebuild,
+the status will change to GraphResponseStatuses.FRESH_GRAPH,
+and the iteration will end.
+
+The graph_json field will contain the graph corresponding
+to each of these responses, and will remain a non-None
+as long as there is any version of the graph available.
+ 
