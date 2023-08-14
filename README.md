@@ -13,6 +13,7 @@ from connectedpapers import ConnectedPapersClient
 
 DEEPFRUITS_PAPER_ID = "9397e7acd062245d37350f5c05faf56e9cfae0d6"
 
+# TEST_TOKEN allows access ONLY to the paper with the id DEEPFRUITS_PAPER_ID
 client = ConnectedPapersClient(access_token="TEST_TOKEN")
 remaining_uses_count = client.get_remaining_usages_sync()
 print(f"Remaining uses count: {remaining_uses_count}")
@@ -25,9 +26,9 @@ See more on the [usage samples](https://github.com/ConnectedPapers/connectedpape
 
 See graph structure at [graph.py](https://github.com/ConnectedPapers/connectedpapers-py/blob/master/connectedpapers/graph.py).
 
-# Configuring server address and API key
+# Configuring the API key
 There are multiple ways to configure the server address and API key:
-1. Set the environment variables `CONNECTED_PAPERS_SERVER_ADDRESS` and `CONNECTED_PAPERS_API_KEY`:
+1. Set the environment variable `CONNECTED_PAPERS_API_KEY`:
     ```bash
    export CONNECTED_PAPERS_API_KEY="YOUR_API_KEY"
     ```
