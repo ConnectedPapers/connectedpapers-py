@@ -6,9 +6,12 @@ from typing import Any, AsyncIterator, List, Optional
 
 import aiohttp
 import dacite
+import nest_asyncio  # type: ignore
 
 from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
 from .graph import Graph, PaperID
+
+nest_asyncio.apply()
 
 
 class GraphResponseStatuses(Enum):
