@@ -13,7 +13,7 @@ from connectedpapers import ConnectedPapersClient
 
 DEEPFRUITS_PAPER_ID = "9397e7acd062245d37350f5c05faf56e9cfae0d6"
 
-client = ConnectedPapersClient()
+client = ConnectedPapersClient(access_token="TEST_TOKEN")
 remaining_uses_count = client.get_remaining_usages_sync()
 print(f"Remaining uses count: {remaining_uses_count}")
 free_access_papers = client.get_free_access_papers_sync()
@@ -47,6 +47,14 @@ There are multiple ways to configure the server address and API key:
 ## Getting an access token
 Contact us at `hello@connectedpapers.com` to get
 an early-access access token.
+
+Using the token `TEST_TOKEN` or not passing a token at all,
+will allow you to access the paper with the id `9397e7acd062245d37350f5c05faf56e9cfae0d6`
+for testing purposes.
+
+## Paper IDs
+We use the ShaIDs from [Semantic Scholar](https://www.semanticscholar.org/) as paper IDs.
+You can find the ShaID of a paper by searching for it on Semantic Scholar and copying the ID from the URL.
 
 # API
 Most functions offer a synchronous and an asynchronous version.
