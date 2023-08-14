@@ -45,6 +45,11 @@ There are multiple ways to configure the server address and API key:
    
    client = ConnectedPapersClient(access_token="YOUR_API_KEY", server_addr="https://api.connectedpapers.com")
    ```
+
+## Getting an access token
+Contact us at `hello@connectedpapers.com` to get
+an early-access access token.
+
 # API
 Most functions offer a synchronous and an asynchronous version.
 
@@ -144,4 +149,3 @@ and the iteration will end.
 The graph_json field will contain the graph corresponding
 to each of these responses, and will remain a non-None
 as long as there is any version of the graph available.
- 
