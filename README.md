@@ -29,10 +29,8 @@ See graph structure at [graph.py](https://github.com/ConnectedPapers/connectedpa
 There are multiple ways to configure the server address and API key:
 1. Set the environment variables `CONNECTED_PAPERS_SERVER_ADDRESS` and `CONNECTED_PAPERS_API_KEY`:
     ```bash
-   export CONNECTED_PAPERS_REST_API="https://api.connectedpapers.com"
    export CONNECTED_PAPERS_API_KEY="YOUR_API_KEY"
     ```
-   (You do not need to configure the server address, uses the correct one by default).
    Then you can use the client without parameters:
    ```python
     from connectedpapers import ConnectedPapersClient
@@ -43,7 +41,7 @@ There are multiple ways to configure the server address and API key:
    ```python
    from connectedpapers import ConnectedPapersClient
    
-   client = ConnectedPapersClient(access_token="YOUR_API_KEY", server_addr="https://api.connectedpapers.com")
+   client = ConnectedPapersClient(access_token="YOUR_API_KEY")
    ```
 
 ## Getting an access token
@@ -52,6 +50,13 @@ an early-access access token.
 
 # API
 Most functions offer a synchronous and an asynchronous version.
+
+If a graph is already built, you can get it within a standard API call latency.
+If it is outdated (older than 1 month), you can still get it using the `fresh_only=False` parameter.
+If you wait for a rebuild (either `fresh_only=True` and graph older than 30 days, or no graph built for the paper)
+a rebuild will be triggered; A graph build can take up to 1 minute, and usually around 10 seconds.
+
+The graph structure is documented at [graph.py](https://github.com/ConnectedPapers/connectedpapers-py/blob/master/connectedpapers/graph.py).
 
 ## API structure
 We have the following API calls available:
@@ -69,7 +74,7 @@ towards your usages count.
 ```python
 from connectedpapers import ConnectedPapersClient
 
-client = ConnectedPapersClient()
+client = ConnectedPapersClient(access_token="YOUR_API_KEY")
 client.get_graph_sync("YOUR_PAPER_ID")  # Fetch a graph for a single paper
 client.get_remaining_usages_sync()  # Get the remaining usages count for your API key
 client.get_free_access_papers_sync()  # Get the list of papers that are free to access
@@ -80,7 +85,7 @@ client.get_free_access_papers_sync()  # Get the list of papers that are free to 
 ```python
 from connectedpapers import ConnectedPapersClient
 
-client = ConnectedPapersClient()
+client = ConnectedPapersClient(access_token="YOUR_API_KEY")
 
 
 async def usage_sample() -> None:
@@ -92,7 +97,7 @@ usage_sample()
 ```
 
 ## Async iterator API
-The client offers support for Python's asynchronous iterator 
+The client offers support for Python's [asynchronous iterator](https://peps.python.org/pep-0525/) 
 access to the API, allowing for real-time monitoring of
 the progress of graph builds and retrieval of both current
 and rebuilt papers.
