@@ -10,6 +10,9 @@ import dacite
 from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
 from .graph import Graph, PaperID
 
+import nest_asyncio
+nest_asyncio.apply()
+
 
 class GraphResponseStatuses(Enum):
     """Statuses for API"""
