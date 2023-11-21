@@ -11,8 +11,6 @@ import nest_asyncio  # type: ignore
 from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
 from .graph import Graph, PaperID
 
-nest_asyncio.apply()
-
 
 class GraphResponseStatuses(Enum):
     """Statuses for API"""
@@ -65,6 +63,7 @@ class ConnectedPapersClient:
     async def get_graph_async_iterator(
         self, paper_id: str, fresh_only: bool = False, loop_until_fresh: bool = True
     ) -> AsyncIterator[GraphResponse]:
+        nest_asyncio.apply()
         retry_counter = 3
         while retry_counter > 0:
             try:
@@ -110,6 +109,7 @@ class ConnectedPapersClient:
     async def get_graph_async(
         self, paper_id: str, fresh_only: bool = True
     ) -> GraphResponse:
+        nest_asyncio.apply()
         generator = self.get_graph_async_iterator(
             paper_id, fresh_only=fresh_only, loop_until_fresh=fresh_only
         )
@@ -129,6 +129,7 @@ class ConnectedPapersClient:
             loop.close()
 
     async def get_remaining_usages_async(self) -> int:
+        nest_asyncio.apply()
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.server_addr}/papers-api/remaining-usages",
@@ -148,6 +149,7 @@ class ConnectedPapersClient:
             loop.close()
 
     async def get_free_access_papers_async(self) -> List[PaperID]:
+        nest_asyncio.apply()
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.server_addr}/papers-api/free-access-papers",
