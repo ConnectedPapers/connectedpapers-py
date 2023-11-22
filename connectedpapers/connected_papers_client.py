@@ -1,5 +1,6 @@
 import asyncio
 import dataclasses
+import sys
 import typing
 from enum import Enum
 from typing import Any, AsyncIterator, List, Optional
@@ -11,9 +12,9 @@ import nest_asyncio  # type: ignore
 from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
 from .graph import Graph, PaperID
 
-import sys
-if sys.platform == 'win32':
+if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 
 class GraphResponseStatuses(Enum):
     """Statuses for API"""
