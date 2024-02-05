@@ -125,6 +125,7 @@ class ConnectedPapersClient:
         return result
 
     def get_graph_sync(self, paper_id: str, fresh_only: bool = True) -> GraphResponse:
+        nest_asyncio.apply()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -145,6 +146,7 @@ class ConnectedPapersClient:
                 return typing.cast(int, data["remaining_uses"])
 
     def get_remaining_usages_sync(self) -> int:
+        nest_asyncio.apply()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -165,6 +167,7 @@ class ConnectedPapersClient:
                 return typing.cast(List[PaperID], data["papers"])
 
     def get_free_access_papers_sync(self) -> List[PaperID]:
+        nest_asyncio.apply()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
