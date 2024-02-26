@@ -3,12 +3,13 @@ import asyncio
 import pytest
 
 from connectedpapers import ConnectedPapersClient
-from connectedpapers.connected_papers_client import GraphResponse, GraphResponseStatuses
+from connectedpapers.connected_papers_client import (GraphResponse,
+                                                     GraphResponseStatuses)
 from connectedpapers.consts import TEST_TOKEN
 from tests.test_connected_papers_api import TEST_FAKE_PAPER_ID
 
 
-async def wrapper_for_old_graph(no_nest=False) -> GraphResponse:
+async def wrapper_for_old_graph(no_nest: bool = False) -> GraphResponse:
     connected_papers_api = ConnectedPapersClient(access_token=TEST_TOKEN)
     if no_nest:
         connected_papers_api.nested_asyncio = False
@@ -18,12 +19,12 @@ async def wrapper_for_old_graph(no_nest=False) -> GraphResponse:
     return old_graph
 
 
-def sync_wrapper_2(no_nest=False) -> GraphResponse:
+def sync_wrapper_2(no_nest: bool = False) -> GraphResponse:
     loop = asyncio.new_event_loop()
     return loop.run_until_complete(wrapper_for_old_graph(no_nest))
 
 
-async def async_wrapper_2(no_nest=False) -> GraphResponse:
+async def async_wrapper_2(no_nest: bool = False) -> GraphResponse:
     return sync_wrapper_2(no_nest)
 
 
