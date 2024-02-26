@@ -3,8 +3,7 @@ import asyncio
 import pytest
 
 from connectedpapers import ConnectedPapersClient
-from connectedpapers.connected_papers_client import (GraphResponse,
-                                                     GraphResponseStatuses)
+from connectedpapers.connected_papers_client import GraphResponse, GraphResponseStatuses
 from connectedpapers.consts import TEST_TOKEN
 from tests.test_connected_papers_api import TEST_FAKE_PAPER_ID
 
