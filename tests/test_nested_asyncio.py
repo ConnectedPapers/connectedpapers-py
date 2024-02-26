@@ -1,7 +1,5 @@
 import asyncio
 
-import pytest
-
 from connectedpapers import ConnectedPapersClient
 from connectedpapers.connected_papers_client import GraphResponse, GraphResponseStatuses
 from connectedpapers.consts import TEST_TOKEN
