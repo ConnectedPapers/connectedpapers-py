@@ -63,11 +63,16 @@ class ConnectedPapersClient:
     ) -> None:
         self.access_token = access_token
         self.server_addr = server_addr
+        self.nested_asyncio: bool = True
+
+    def nest_asyncio(self) -> None:
+        if self.nested_asyncio:
+            nest_asyncio.apply()
 
     async def get_graph_async_iterator(
         self, paper_id: str, fresh_only: bool = False, loop_until_fresh: bool = True
     ) -> AsyncIterator[GraphResponse]:
-        nest_asyncio.apply()
+        self.nest_asyncio()
         retry_counter = 3
         while retry_counter > 0:
             try:
@@ -113,7 +118,7 @@ class ConnectedPapersClient:
     async def get_graph_async(
         self, paper_id: str, fresh_only: bool = True
     ) -> GraphResponse:
-        nest_asyncio.apply()
+        self.nest_asyncio()
         generator = self.get_graph_async_iterator(
             paper_id, fresh_only=fresh_only, loop_until_fresh=fresh_only
         )
@@ -125,6 +130,7 @@ class ConnectedPapersClient:
         return result
 
     def get_graph_sync(self, paper_id: str, fresh_only: bool = True) -> GraphResponse:
+        self.nest_asyncio()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -133,7 +139,7 @@ class ConnectedPapersClient:
             loop.close()
 
     async def get_remaining_usages_async(self) -> int:
-        nest_asyncio.apply()
+        self.nest_asyncio()
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.server_addr}/papers-api/remaining-usages",
@@ -145,6 +151,7 @@ class ConnectedPapersClient:
                 return typing.cast(int, data["remaining_uses"])
 
     def get_remaining_usages_sync(self) -> int:
+        self.nest_asyncio()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -153,7 +160,7 @@ class ConnectedPapersClient:
             loop.close()
 
     async def get_free_access_papers_async(self) -> List[PaperID]:
-        nest_asyncio.apply()
+        self.nest_asyncio()
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.server_addr}/papers-api/free-access-papers",
@@ -165,6 +172,7 @@ class ConnectedPapersClient:
                 return typing.cast(List[PaperID], data["papers"])
 
     def get_free_access_papers_sync(self) -> List[PaperID]:
+        self.nest_asyncio()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:

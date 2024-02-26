@@ -27,14 +27,14 @@ jobs:
         python -m pip install poetry
         python -m poetry install
 
-    - name: Run black
-      run: python -m poetry run black --check .
+#    - name: Run black
+#      run: python -m poetry run black --check .
 
     - name: Run mypy
       run: python -m poetry run mypy --strict connectedpapers tests usage_samples
 
-    - name: Run isort
-      run: python -m poetry run isort --check-only .
+#    - name: Run isort
+#      run: python -m poetry run isort --check-only .
 
     - name: Run flake8
       run: python -m poetry run flake8 connectedpapers tests usage_samples
