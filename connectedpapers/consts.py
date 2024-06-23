@@ -1,7 +1,7 @@
 import os
 
 CONNECTED_PAPERS_REST_API = os.environ.get(
-    "CONNECTED_PAPERS_REST_API", "https://api.connectedpapers.com"
+    "CONNECTED_PAPERS_REST_API", "https://rest.prod.connectedpapers.com"
 )
 
 TEST_TOKEN = "TEST_TOKEN"
