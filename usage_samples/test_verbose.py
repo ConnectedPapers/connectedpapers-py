@@ -3,8 +3,10 @@
 
 import argparse
 import sys
+from typing import Optional
 
 from connectedpapers import ConnectedPapersClient
+from connectedpapers.connected_papers_client import GraphResponse
 
 
 def main() -> int:
@@ -45,16 +47,16 @@ def main() -> int:
     # Determine the mode
     if args.no_wait:
         fresh_only = False
-        print(f"Mode: Quick check (no waiting)")
+        print("Mode: Quick check (no waiting)")
     elif args.accept_old:
         fresh_only = False
-        print(f"Mode: Accept cached graph if available")
+        print("Mode: Accept cached graph if available")
     else:
         fresh_only = True  # Default: wait for complete graph
         if args.fresh:
-            print(f"Mode: Force fresh rebuild (ignore cache)")
+            print("Mode: Force fresh rebuild (ignore cache)")
         else:
-            print(f"Mode: Wait for complete graph")
+            print("Mode: Wait for complete graph")
 
     print("-" * 60)
 
@@ -62,30 +64,36 @@ def main() -> int:
     client = ConnectedPapersClient(
         access_token=args.api_key,
         verbose=True,
-        retry_on_overload=True  # Automatically retry when server is overloaded
+        retry_on_overload=True,  # Automatically retry when server is overloaded
     )
 
     try:
         if args.no_wait:
             # Use the iterator to get just the first response without waiting
             print("\n[Quick check - returning immediately with current status]")
-            async def get_first_response():
+
+            async def get_first_response() -> Optional[GraphResponse]:
                 async for response in client.get_graph_async_iterator(
-                    args.paper_id,
-                    fresh_only=False,
-                    wait_until_complete=False
+                    args.paper_id, fresh_only=False, wait_until_complete=False
                 ):
                     return response
+                return None
 
             import asyncio
+
             response = asyncio.run(get_first_response())
+            if response is None:
+                print("No response received")
+                return 1
         else:
             # Use fresh_only to control waiting behavior
             if fresh_only:
                 print("\n[Waiting for complete graph - this may take up to 60 seconds]")
                 print("[Will automatically retry if server is OVERLOADED]")
             else:
-                print("\n[Will return cached graph if available, otherwise wait for completion]")
+                print(
+                    "\n[Will return cached graph if available, otherwise wait for completion]"
+                )
             print()
             response = client.get_graph_sync(args.paper_id, fresh_only=fresh_only)
 
@@ -100,7 +108,9 @@ def main() -> int:
                 print("\n" + "=" * 60)
                 print("PAPERS IN GRAPH")
                 print("=" * 60)
-                for i, (paper_id, paper) in enumerate(response.graph_json.nodes.items(), 1):
+                for i, (paper_id, paper) in enumerate(
+                    response.graph_json.nodes.items(), 1
+                ):
                     print(f"\n{i}. {paper.title}")
                     print(f"   ID: {paper_id}")
                     if paper.year:

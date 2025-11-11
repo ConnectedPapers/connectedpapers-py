@@ -7,7 +7,7 @@ from tests.test_connected_papers_api import TEST_FAKE_PAPER_ID
 
 
 async def wrapper_for_old_graph(no_nest: bool = False) -> GraphResponse:
-    connected_papers_api = ConnectedPapersClient(access_token=TEST_TOKEN)
+    connected_papers_api = ConnectedPapersClient(access_token=TEST_TOKEN, verbose=True)
     if no_nest:
         connected_papers_api.nested_asyncio = False
     old_graph = connected_papers_api.get_graph_sync(

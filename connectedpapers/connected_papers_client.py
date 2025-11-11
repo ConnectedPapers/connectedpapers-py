@@ -118,7 +118,6 @@ class ConnectedPapersClient:
                             data = await resp.json()
                             if data["status"] not in GraphResponseStatuses.__dict__:
                                 data["status"] = GraphResponseStatuses.ERROR.value
-                            fresh_only = True
                             response = dacite.from_dict(
                                 data_class=GraphResponse,
                                 data=data,
@@ -131,16 +130,28 @@ class ConnectedPapersClient:
 
                             # Log status based on response type
                             if response.status == GraphResponseStatuses.IN_PROGRESS:
-                                progress_pct = response.progress if response.progress is not None else 0
-                                self._log(f"Status: IN_PROGRESS - Building graph: {progress_pct:.0f}% complete")
+                                progress_pct = (
+                                    response.progress
+                                    if response.progress is not None
+                                    else 0
+                                )
+                                self._log(
+                                    f"Status: IN_PROGRESS - Building graph: {progress_pct:.0f}% complete"
+                                )
                             elif response.status == GraphResponseStatuses.QUEUED:
-                                self._log("Status: QUEUED - Graph build queued, waiting...")
+                                self._log(
+                                    "Status: QUEUED - Graph build queued, waiting..."
+                                )
                             elif response.status == GraphResponseStatuses.OLD_GRAPH:
-                                self._log("Status: OLD_GRAPH - Using cached graph, requesting fresh build...")
+                                self._log(
+                                    "Status: OLD_GRAPH - Using cached graph, requesting fresh build..."
+                                )
                             elif response.status == GraphResponseStatuses.FRESH_GRAPH:
                                 self._log("Status: FRESH_GRAPH - Graph ready")
                             elif response.status in end_response_statuses:
-                                self._log(f"Status: {response.status.value} - Request failed")
+                                self._log(
+                                    f"Status: {response.status.value} - Request failed"
+                                )
 
                             # Handle OVERLOADED status with exponential backoff
                             if response.status == GraphResponseStatuses.OVERLOADED:
@@ -151,13 +162,17 @@ class ConnectedPapersClient:
                                 ):
                                     delay = overload_retry_delays[overload_retry_index]
                                     attempt_num = overload_retry_index + 1
-                                    self._log(f"Status: OVERLOADED - Server busy, retrying in {delay}s (attempt {attempt_num}/4)")
+                                    self._log(
+                                        f"Status: OVERLOADED - Server busy, retrying in {delay}s (attempt {attempt_num}/4)"
+                                    )
                                     overload_retry_index += 1
                                     await asyncio.sleep(delay)
                                     continue  # Retry the request
                                 else:
                                     # Return OVERLOADED response if retries disabled or exhausted
-                                    self._log("Status: OVERLOADED - Max retries exhausted")
+                                    self._log(
+                                        "Status: OVERLOADED - Max retries exhausted"
+                                    )
                                     yield response
                                     return
 
@@ -166,12 +181,29 @@ class ConnectedPapersClient:
 
                             if response.graph_json is not None:
                                 newest_graph = response.graph_json
+
+                            # If fresh_only was originally False and we got OLD_GRAPH, that's what was requested
+                            if (
+                                response.status == GraphResponseStatuses.OLD_GRAPH
+                                and not fresh_only
+                            ):
+                                yield response
+                                return
+
                             if (
                                 response.status in end_response_statuses
                                 or not wait_until_complete
                             ):
                                 yield response
                                 return
+
+                            # If we got OLD_GRAPH and wait_until_complete=True, request fresh on next iteration
+                            if (
+                                response.status == GraphResponseStatuses.OLD_GRAPH
+                                and wait_until_complete
+                            ):
+                                fresh_only = True
+
                             response.graph_json = newest_graph
                             yield response
                             await asyncio.sleep(SLEEP_TIME_BETWEEN_CHECKS)
@@ -180,9 +212,13 @@ class ConnectedPapersClient:
                 attempt_num = 4 - retry_counter
                 error_type = type(e).__name__
                 if retry_counter == 0:
-                    self._log(f"Error: {error_type} - Max retries exhausted, raising exception")
+                    self._log(
+                        f"Error: {error_type} - Max retries exhausted, raising exception"
+                    )
                     raise e
-                self._log(f"Error: {error_type} - Retrying in {SLEEP_TIME_AFTER_ERROR:.0f}s (attempt {attempt_num}/3)")
+                self._log(
+                    f"Error: {error_type} - Retrying in {SLEEP_TIME_AFTER_ERROR:.0f}s (attempt {attempt_num}/3)"
+                )
                 await asyncio.sleep(SLEEP_TIME_AFTER_ERROR)
 
     async def get_graph_async(

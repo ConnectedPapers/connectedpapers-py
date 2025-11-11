@@ -10,7 +10,7 @@ TEST_FAKE_PAPER_ID = "1234567890123456789012345678901234567890"
 
 
 def test_old_graph() -> None:
-    connected_papers_api = ConnectedPapersClient(access_token=TEST_TOKEN)
+    connected_papers_api = ConnectedPapersClient(access_token=TEST_TOKEN, verbose=True)
     old_graph = connected_papers_api.get_graph_sync(
         TEST_FAKE_PAPER_ID, fresh_only=False
     )
