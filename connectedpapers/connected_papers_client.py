@@ -62,20 +62,44 @@ class ConnectedPapersClient:
         access_token: str = ACCESS_TOKEN,
         server_addr: str = CONNECTED_PAPERS_REST_API,
         retry_on_overload: bool = True,
+        verbose: bool = False,
     ) -> None:
         self.access_token = access_token
         self.server_addr = server_addr
         self.nested_asyncio: bool = True
         self.retry_on_overload = retry_on_overload
+        self.verbose = verbose
 
     def nest_asyncio(self) -> None:
         if self.nested_asyncio:
             nest_asyncio.apply()
 
+    def _log(self, message: str) -> None:
+        """Print message if verbose mode is enabled."""
+        if self.verbose:
+            from datetime import datetime
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            print(f"[{timestamp}] {message}")
+
     async def get_graph_async_iterator(
-        self, paper_id: str, fresh_only: bool = False, loop_until_fresh: bool = True
+        self, paper_id: str, fresh_only: bool = False, wait_until_complete: bool = True
     ) -> AsyncIterator[GraphResponse]:
+        """
+        Get graph as an async iterator, yielding status updates.
+
+        Args:
+            paper_id: The paper ID to get the graph for
+            fresh_only: If True, force a fresh graph rebuild (ignore cached graphs)
+            wait_until_complete: If True, wait until a terminal status is reached
+                                (FRESH_GRAPH, OLD_GRAPH, or error). If False, return
+                                immediately with current status.
+
+        Yields:
+            GraphResponse objects with status updates (QUEUED, IN_PROGRESS, FRESH_GRAPH, etc.)
+        """
         self.nest_asyncio()
+        self._log(f"Requesting graph for paper: {paper_id}")
         retry_counter = 3
         overload_retry_delays = [5, 10, 20, 40]  # Exponential backoff delays in seconds
         overload_retry_index = 0
@@ -105,6 +129,19 @@ class ConnectedPapersClient:
                                 ),
                             )
 
+                            # Log status based on response type
+                            if response.status == GraphResponseStatuses.IN_PROGRESS:
+                                progress_pct = response.progress if response.progress is not None else 0
+                                self._log(f"Status: IN_PROGRESS - Building graph: {progress_pct:.0f}% complete")
+                            elif response.status == GraphResponseStatuses.QUEUED:
+                                self._log("Status: QUEUED - Graph build queued, waiting...")
+                            elif response.status == GraphResponseStatuses.OLD_GRAPH:
+                                self._log("Status: OLD_GRAPH - Using cached graph, requesting fresh build...")
+                            elif response.status == GraphResponseStatuses.FRESH_GRAPH:
+                                self._log("Status: FRESH_GRAPH - Graph ready")
+                            elif response.status in end_response_statuses:
+                                self._log(f"Status: {response.status.value} - Request failed")
+
                             # Handle OVERLOADED status with exponential backoff
                             if response.status == GraphResponseStatuses.OVERLOADED:
                                 if (
@@ -113,11 +150,14 @@ class ConnectedPapersClient:
                                     < len(overload_retry_delays)
                                 ):
                                     delay = overload_retry_delays[overload_retry_index]
+                                    attempt_num = overload_retry_index + 1
+                                    self._log(f"Status: OVERLOADED - Server busy, retrying in {delay}s (attempt {attempt_num}/4)")
                                     overload_retry_index += 1
                                     await asyncio.sleep(delay)
                                     continue  # Retry the request
                                 else:
                                     # Return OVERLOADED response if retries disabled or exhausted
+                                    self._log("Status: OVERLOADED - Max retries exhausted")
                                     yield response
                                     return
 
@@ -128,7 +168,7 @@ class ConnectedPapersClient:
                                 newest_graph = response.graph_json
                             if (
                                 response.status in end_response_statuses
-                                or not loop_until_fresh
+                                or not wait_until_complete
                             ):
                                 yield response
                                 return
@@ -137,8 +177,12 @@ class ConnectedPapersClient:
                             await asyncio.sleep(SLEEP_TIME_BETWEEN_CHECKS)
             except Exception as e:
                 retry_counter -= 1
+                attempt_num = 4 - retry_counter
+                error_type = type(e).__name__
                 if retry_counter == 0:
+                    self._log(f"Error: {error_type} - Max retries exhausted, raising exception")
                     raise e
+                self._log(f"Error: {error_type} - Retrying in {SLEEP_TIME_AFTER_ERROR:.0f}s (attempt {attempt_num}/3)")
                 await asyncio.sleep(SLEEP_TIME_AFTER_ERROR)
 
     async def get_graph_async(
@@ -146,7 +190,7 @@ class ConnectedPapersClient:
     ) -> GraphResponse:
         self.nest_asyncio()
         generator = self.get_graph_async_iterator(
-            paper_id, fresh_only=fresh_only, loop_until_fresh=fresh_only
+            paper_id, fresh_only=fresh_only, wait_until_complete=True
         )
         result = GraphResponse(
             status=GraphResponseStatuses.ERROR, graph_json=None, progress=None
@@ -166,6 +210,7 @@ class ConnectedPapersClient:
 
     async def get_remaining_usages_async(self) -> int:
         self.nest_asyncio()
+        self._log("Fetching remaining API usage...")
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.server_addr}/papers-api/remaining-usages",
@@ -174,7 +219,9 @@ class ConnectedPapersClient:
                 if resp.status != 200:
                     raise RuntimeError(f"Bad response: {resp.status}")
                 data = await resp.json()
-                return typing.cast(int, data["remaining_uses"])
+                remaining = typing.cast(int, data["remaining_uses"])
+                self._log(f"Remaining requests: {remaining}")
+                return remaining
 
     def get_remaining_usages_sync(self) -> int:
         self.nest_asyncio()
@@ -187,6 +234,7 @@ class ConnectedPapersClient:
 
     async def get_free_access_papers_async(self) -> List[PaperID]:
         self.nest_asyncio()
+        self._log("Fetching free access papers...")
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.server_addr}/papers-api/free-access-papers",
@@ -195,7 +243,9 @@ class ConnectedPapersClient:
                 if resp.status != 200:
                     raise RuntimeError(f"Bad response: {resp.status}")
                 data = await resp.json()
-                return typing.cast(List[PaperID], data["papers"])
+                papers = typing.cast(List[PaperID], data["papers"])
+                self._log(f"Found {len(papers)} free access papers")
+                return papers
 
     def get_free_access_papers_sync(self) -> List[PaperID]:
         self.nest_asyncio()

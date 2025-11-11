@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "connectedpapers-py"
-version = "0.2.3"
+version = "0.2.4"
 description = "The official python client for the connected papers API."
 authors = ["ConnectedPapersAdmin <admin@connectedpapers.com>", "KanHar <knaan.harpaz@gmail.com>"]
 readme = "README.md"

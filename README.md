@@ -145,24 +145,50 @@ Here's the signature for invoking this method:
 class ConnectedPapersClient:
     # ...
     async def get_graph_async_iterator(
-        self, paper_id: str, fresh_only: bool = False, loop_until_fresh: bool = True
+        self, paper_id: str, fresh_only: bool = False, wait_until_complete: bool = True
     ) -> AsyncIterator[GraphResponse]:
         # ...
 ```
-Call this method with fresh_only=False and loop_until_fresh=True
-to request the existing graph and continue waiting
-for a rebuild if necessary.
 
-The initial response will contain the status GraphResponseStatuses.OLD_GRAPH,
-then transition through GraphResponseStatuses.QUEUED and
-GraphResponseStatuses.IN_PROGRESS, with the progress
-field reflecting the percentage of the graph build
-completed. Upon completion of the rebuild,
-the status will change to GraphResponseStatuses.FRESH_GRAPH,
-and the iteration will end.
+### Understanding the Parameters
+
+**`fresh_only` (bool, default=False)**: Controls API behavior
+- `False`: Accept cached/old graph if available
+- `True`: Force a fresh graph rebuild, ignore cached graphs
+
+**`wait_until_complete` (bool, default=True)**: Controls client waiting behavior
+- `True`: Wait until a terminal status is reached (FRESH_GRAPH, OLD_GRAPH, or error)
+- `False`: Return immediately with current status (QUEUED, IN_PROGRESS, etc.)
+
+### Common Usage Patterns
+
+**Accept cached graph or wait for new one:**
+```python
+# fresh_only=False, wait_until_complete=True (default)
+async for response in client.get_graph_async_iterator(paper_id):
+    if response.status == GraphResponseStatuses.OLD_GRAPH:
+        # Got cached graph immediately
+    elif response.status == GraphResponseStatuses.FRESH_GRAPH:
+        # No cache existed, waited for new graph
+```
+
+**Force fresh rebuild and wait:**
+```python
+# fresh_only=True, wait_until_complete=True
+async for response in client.get_graph_async_iterator(paper_id, fresh_only=True):
+    # Waits through QUEUED → IN_PROGRESS → FRESH_GRAPH
+```
+
+**Quick status check without waiting:**
+```python
+# wait_until_complete=False
+async for response in client.get_graph_async_iterator(paper_id, wait_until_complete=False):
+    # Returns immediately with current status (might be QUEUED or IN_PROGRESS)
+    break  # Get first response only
+```
 
 The graph_json field will contain the graph corresponding
-to each of these responses, and will remain a non-None
+to each of these responses, and will remain non-None
 as long as there is any version of the graph available.
 
 # Rate Limiting and Overload Handling
@@ -214,3 +240,102 @@ print(f"Free access papers: {free_papers}")
 ```
 
 Papers accessed within 31 days can be re-accessed without counting toward your rate limit.
+
+# Verbose Logging
+
+## Enable Real-Time Status Updates
+By default, the client operates silently. You can enable verbose logging to see real-time progress updates during API operations:
+
+```python
+from connectedpapers import ConnectedPapersClient
+
+# Enable verbose logging
+client = ConnectedPapersClient(
+    access_token="YOUR_API_KEY",
+    verbose=True  # Default is False
+)
+
+# Now you'll see timestamped status updates in the console
+graph = client.get_graph_sync("YOUR_PAPER_ID")
+```
+
+### Example Output
+
+With `verbose=True`, you'll see timestamped updates like:
+
+```
+[14:23:01] Requesting graph for paper: 9397e7acd062245d37350f5c05faf56e9cfae0d6
+[14:23:02] Status: QUEUED - Graph build queued, waiting...
+[14:23:03] Status: IN_PROGRESS - Building graph: 15% complete
+[14:23:04] Status: IN_PROGRESS - Building graph: 42% complete
+[14:23:05] Status: IN_PROGRESS - Building graph: 78% complete
+[14:23:06] Status: IN_PROGRESS - Building graph: 95% complete
+[14:23:07] Status: FRESH_GRAPH - Graph ready
+```
+
+When rate limiting occurs:
+```
+[14:25:01] Requesting graph for paper: abc123
+[14:25:02] Status: OVERLOADED - Server busy, retrying in 5s (attempt 1/4)
+[14:25:07] Status: OVERLOADED - Server busy, retrying in 10s (attempt 2/4)
+[14:25:17] Status: IN_PROGRESS - Building graph: 23% complete
+```
+
+### What Gets Logged
+
+Verbose mode provides visibility into:
+- **Graph requests** - Paper ID being requested
+- **Build progress** - Real-time percentage updates during graph generation
+- **Queue status** - When your request is queued
+- **Rate limiting** - Retry attempts with exponential backoff delays
+- **Errors** - Connection issues and retry attempts
+- **API usage** - Remaining request count
+- **Free access papers** - Count of papers available for free re-access
+
+This is especially useful for:
+- Long-running graph builds (can take up to 60 seconds)
+- Monitoring retry behavior during high load
+- Debugging API integration issues
+- Understanding API quota usage
+
+### Testing Verbose Mode
+
+Use the included CLI tool to test verbose logging:
+
+```bash
+# Default: Wait for complete graph (through QUEUED, IN_PROGRESS, OVERLOADED states)
+python usage_samples/test_verbose.py <PAPER_ID> --api-key YOUR_API_KEY
+
+# Accept cached/old graph if available (return immediately)
+python usage_samples/test_verbose.py <PAPER_ID> --api-key YOUR_API_KEY --accept-old
+
+# Quick status check without waiting (return immediately)
+python usage_samples/test_verbose.py <PAPER_ID> --api-key YOUR_API_KEY --no-wait
+
+# Display all papers in the graph after completion
+python usage_samples/test_verbose.py <PAPER_ID> --api-key YOUR_API_KEY --show-papers
+```
+
+**Behavior modes:**
+- **Default**: Always waits for a complete graph (FRESH_GRAPH status)
+- **--accept-old**: Returns cached graph immediately if available
+- **--no-wait**: Returns current status immediately without waiting
+
+### Testing Basic API Calls
+
+For a simple demonstration of the core API functionality, use the `get_key_details.py` script:
+
+```bash
+# Basic usage (uses TEST_TOKEN by default or CONNECTED_PAPERS_API_KEY env variable)
+python usage_samples/get_key_details.py
+```
+
+This script demonstrates the three main API calls:
+- **`get_remaining_usages_sync()`** - Check your API quota
+- **`get_free_access_papers_sync()`** - List papers available for free re-access
+- **`get_graph_sync()`** - Fetch a paper's graph
+
+The script validates the API integration by fetching the test paper (DEEPFRUITS) and asserting the graph structure is correct. It's useful for:
+- Verifying your API key is working
+- Quick testing of API connectivity
+- Understanding the basic API workflow
