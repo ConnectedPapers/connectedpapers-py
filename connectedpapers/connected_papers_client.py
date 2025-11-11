@@ -107,7 +107,11 @@ class ConnectedPapersClient:
 
                             # Handle OVERLOADED status with exponential backoff
                             if response.status == GraphResponseStatuses.OVERLOADED:
-                                if self.retry_on_overload and overload_retry_index < len(overload_retry_delays):
+                                if (
+                                    self.retry_on_overload
+                                    and overload_retry_index
+                                    < len(overload_retry_delays)
+                                ):
                                     delay = overload_retry_delays[overload_retry_index]
                                     overload_retry_index += 1
                                     await asyncio.sleep(delay)
