@@ -29,6 +29,7 @@ class GraphResponseStatuses(Enum):
     BAD_TOKEN = "BAD_TOKEN"
     BAD_REQUEST = "BAD_REQUEST"
     OUT_OF_REQUESTS = "OUT_OF_REQUESTS"
+    OVERLOADED = "OVERLOADED"
 
 
 @dataclasses.dataclass
@@ -60,10 +61,12 @@ class ConnectedPapersClient:
         self,
         access_token: str = ACCESS_TOKEN,
         server_addr: str = CONNECTED_PAPERS_REST_API,
+        retry_on_overload: bool = True,
     ) -> None:
         self.access_token = access_token
         self.server_addr = server_addr
         self.nested_asyncio: bool = True
+        self.retry_on_overload = retry_on_overload
 
     def nest_asyncio(self) -> None:
         if self.nested_asyncio:
@@ -74,6 +77,9 @@ class ConnectedPapersClient:
     ) -> AsyncIterator[GraphResponse]:
         self.nest_asyncio()
         retry_counter = 3
+        overload_retry_delays = [5, 10, 20, 40]  # Exponential backoff delays in seconds
+        overload_retry_index = 0
+
         while retry_counter > 0:
             try:
                 async with aiohttp.ClientSession() as session:
@@ -98,6 +104,22 @@ class ConnectedPapersClient:
                                     }
                                 ),
                             )
+
+                            # Handle OVERLOADED status with exponential backoff
+                            if response.status == GraphResponseStatuses.OVERLOADED:
+                                if self.retry_on_overload and overload_retry_index < len(overload_retry_delays):
+                                    delay = overload_retry_delays[overload_retry_index]
+                                    overload_retry_index += 1
+                                    await asyncio.sleep(delay)
+                                    continue  # Retry the request
+                                else:
+                                    # Return OVERLOADED response if retries disabled or exhausted
+                                    yield response
+                                    return
+
+                            # Reset overload retry counter on successful non-OVERLOADED response
+                            overload_retry_index = 0
+
                             if response.graph_json is not None:
                                 newest_graph = response.graph_json
                             if (
