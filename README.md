@@ -127,6 +127,7 @@ class GraphResponseStatuses(Enum):
     BAD_TOKEN = "BAD_TOKEN"
     BAD_REQUEST = "BAD_REQUEST"
     OUT_OF_REQUESTS = "OUT_OF_REQUESTS"
+    OVERLOADED = "OVERLOADED"
 
 
 @dataclasses.dataclass
@@ -163,3 +164,53 @@ and the iteration will end.
 The graph_json field will contain the graph corresponding
 to each of these responses, and will remain a non-None
 as long as there is any version of the graph available.
+
+# Rate Limiting and Overload Handling
+
+## OVERLOADED Status
+As of the 2025-11 API update, the API may return an `OVERLOADED` status when:
+- Your API key exceeds the rate limit (default: 5 builds per minute)
+- The system is temporarily overloaded
+
+Previously, throttling returned HTTP 500 errors. Now it returns HTTP 200 with `status: "OVERLOADED"`.
+
+## Automatic Retry with Exponential Backoff
+By default, the client automatically retries when the server returns `OVERLOADED` status with exponential backoff delays of 5, 10, 20, and 40 seconds.
+
+```python
+from connectedpapers import ConnectedPapersClient
+
+# Default behavior: automatic retries enabled
+client = ConnectedPapersClient(access_token="YOUR_API_KEY")
+
+# The client will automatically retry with exponential backoff: 5s, 10s, 20s, 40s
+graph = client.get_graph_sync("YOUR_PAPER_ID")
+```
+
+When `retry_on_overload=True` (default):
+- The client will automatically retry up to 4 times with delays of 5, 10, 20, and 40 seconds
+- If all retries are exhausted, it will return the `OVERLOADED` status
+
+To disable automatic retries:
+```python
+# Disable automatic retries
+client = ConnectedPapersClient(
+    access_token="YOUR_API_KEY",
+    retry_on_overload=False
+)
+```
+
+When `retry_on_overload=False`:
+- The client will immediately return the `OVERLOADED` status without retrying
+- You can handle this status in your code and implement your own retry logic
+
+## Avoiding Rate Limits
+To minimize rate limit hits, you can check which papers are available for free re-access:
+
+```python
+# Papers accessed within the last 31 days don't count toward rate limit
+free_papers = client.get_free_access_papers_sync()
+print(f"Free access papers: {free_papers}")
+```
+
+Papers accessed within 31 days can be re-accessed without counting toward your rate limit.
