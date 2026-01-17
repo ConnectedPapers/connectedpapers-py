@@ -67,6 +67,37 @@ a rebuild will be triggered; A graph build can take up to 1 minute, and usually 
 
 The graph structure is documented at [graph.py](https://github.com/ConnectedPapers/connectedpapers-py/blob/master/connectedpapers/graph.py).
 
+## Graph Structure
+
+The `Graph` object returned by the API contains:
+
+| Field | Description |
+|-------|-------------|
+| `nodes` | Dictionary of papers in the similarity graph (the main visualization) |
+| `edges` | Connections between papers based on similarity |
+| `common_references` | **Prior works** - foundational papers that papers in the graph cite |
+| `common_citations` | **Derivative works** - newer papers that cite papers in the graph |
+| `common_authors` | Authors who appear across multiple papers in the graph |
+| `start_id` | The ID of the origin paper |
+
+### Accessing Prior and Derivative Works
+
+```python
+from connectedpapers import ConnectedPapersClient
+
+client = ConnectedPapersClient()
+result = client.get_graph_sync("YOUR_PAPER_ID")
+graph = result.graph_json
+
+# Prior works (older foundational papers)
+for paper in graph.common_references:
+    print(f"{paper.year}: {paper.title}")
+
+# Derivative works (newer papers building on this work)
+for paper in graph.common_citations:
+    print(f"{paper.year}: {paper.title}")
+```
+
 ## API structure
 We have the following API calls available:
 * Fetching a graph
