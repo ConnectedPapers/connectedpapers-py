@@ -2,11 +2,14 @@ import datetime
 import os
 import time
 
+import pytest
+
 from connectedpapers import ConnectedPapersClient
 from connectedpapers.connected_papers_client import GraphResponseStatuses
 from connectedpapers.consts import TEST_TOKEN
 
 TEST_FAKE_PAPER_ID = "1234567890123456789012345678901234567890"
+pytestmark = pytest.mark.integration
 
 
 def test_old_graph() -> None:

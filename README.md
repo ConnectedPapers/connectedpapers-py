@@ -370,3 +370,23 @@ The script validates the API integration by fetching the test paper (DEEPFRUITS)
 - Verifying your API key is working
 - Quick testing of API connectivity
 - Understanding the basic API workflow
+
+## Development and CI
+
+Install the SDK and test tools with
+`python -m pip install . 'pytest>=7.4,<8' 'pytest-asyncio>=0.21,<0.22' build`.
+`python -m pytest` runs offline tests against a local HTTP server and records
+retry delays without waiting. External connections are blocked in offline tests.
+No API credentials or graph quota are needed.
+
+CI covers the declared Python 3.8 minimum minor (latest patch) and each released minor through 3.15,
+builds the wheel and source distribution, and checks the installed wheel outside
+the checkout. Lint runs on Python 3.11. CI resolves compatible runtime dependencies
+from package metadata, as consumers do; it does not reuse the old development
+Poetry lock across all Python versions. Updating that lock's security advisories
+is a separate task.
+
+Existing live tests are explicitly opt-in: `python -m pytest --live-api -m integration`.
+They contact the real service and may consume graph quota. Their existing
+`ENABLE_SLOW_TEST` and `TEST_REAL_PAPERS` switches still apply. Never enable these
+tests in ordinary CI.

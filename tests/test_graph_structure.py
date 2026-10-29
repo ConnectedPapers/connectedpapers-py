@@ -7,6 +7,7 @@ from connectedpapers import ConnectedPapersClient
 from connectedpapers.connected_papers_client import GraphResponseStatuses
 
 DEEPFRUITS_PAPER_ID = "9397e7acd062245d37350f5c05faf56e9cfae0d6"
+pytestmark = pytest.mark.integration
 
 
 def test_graph_structure() -> None:
