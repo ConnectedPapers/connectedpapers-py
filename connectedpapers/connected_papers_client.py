@@ -7,7 +7,7 @@ from typing import Any, AsyncIterator, List, Optional
 
 import aiohttp
 import dacite
-import nest_asyncio  # type: ignore
+import nest_asyncio2  # type: ignore
 
 from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
 from .graph import Graph, PaperID
@@ -72,7 +72,7 @@ class ConnectedPapersClient:
 
     def nest_asyncio(self) -> None:
         if self.nested_asyncio:
-            nest_asyncio.apply()
+            nest_asyncio2.apply()
 
     def _log(self, message: str) -> None:
         """Print message if verbose mode is enabled."""

@@ -386,6 +386,10 @@ from package metadata, as consumers do; it does not reuse the old development
 Poetry lock across all Python versions. Updating that lock's security advisories
 is a separate task.
 
+The SDK uses `nest-asyncio2` for nested event-loop support, including synchronous
+calls from notebooks. Its Python 3.14 task-tracking fix keeps `aiohttp` requests
+working on Python 3.14 and 3.15. The SDK's Python minimum remains 3.8.1.
+
 Existing live tests are explicitly opt-in: `python -m pytest --live-api -m integration`.
 They contact the real service and may consume graph quota. Their existing
 `ENABLE_SLOW_TEST` and `TEST_REAL_PAPERS` switches still apply. Never enable these

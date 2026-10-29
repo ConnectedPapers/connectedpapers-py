@@ -1,4 +1,6 @@
 import asyncio
+import subprocess
+import sys
 from typing import Any
 
 import pytest
@@ -10,7 +12,7 @@ from tests.conftest import LocalAPI
 
 
 def run_async(coroutine: Any) -> Any:
-    # The SDK patches asyncio.run via nest_asyncio. Own the loop explicitly so
+    # The SDK patches asyncio.run via nest_asyncio2. Own the loop explicitly so
     # sync calls in earlier tests cannot leave this call using a closed loop.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -228,3 +230,32 @@ def test_sync_client_inside_running_loop(api: LocalAPI) -> None:
         return api.client().get_graph_sync("paper")
 
     assert run_async(nested()).status == Status.FRESH_GRAPH
+
+
+def test_patching_preserves_existing_and_new_task_tracking() -> None:
+    # A fresh interpreter exercises the first patch while a native asyncio task
+    # is already running, before any of the HTTP tests can patch asyncio.
+    script = """
+import asyncio
+from connectedpapers import ConnectedPapersClient
+
+async def probe():
+    current = asyncio.current_task()
+    assert current is not None
+    assert current in asyncio.all_tasks()
+    return current
+
+async def main():
+    before = await probe()
+    ConnectedPapersClient().nest_asyncio()
+    assert await probe() is before
+    child = asyncio.create_task(probe())
+    assert await child is child
+    assert await probe() is before
+
+asyncio.run(main())
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
