@@ -13,7 +13,7 @@ python = ">=3.8.1"
 requests = ">=2.0.0"
 aiohttp = ">=2.0.0"
 dacite = "^1.8.1"
-nest-asyncio = "^1.5.7"
+nest-asyncio2 = "^1.7.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
@@ -31,3 +31,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.flake8]
 ignore = ["E501", "W503"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: live Connected Papers API tests (requires --live-api)"]

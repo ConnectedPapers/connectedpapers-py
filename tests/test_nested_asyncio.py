@@ -1,9 +1,13 @@
 import asyncio
 
+import pytest
+
 from connectedpapers import ConnectedPapersClient
 from connectedpapers.connected_papers_client import GraphResponse, GraphResponseStatuses
 from connectedpapers.consts import TEST_TOKEN
 from tests.test_connected_papers_api import TEST_FAKE_PAPER_ID
+
+pytestmark = pytest.mark.integration
 
 
 async def wrapper_for_old_graph(no_nest: bool = False) -> GraphResponse:
