@@ -1,4 +1,5 @@
 import json
+import os
 import socket
 import threading
 from collections import deque
@@ -19,6 +20,14 @@ def pytest_collection_modifyitems(config: Any, items: Any) -> None:
         for item in items:
             if "integration" in item.keywords:
                 item.add_marker(pytest.mark.skip(reason="requires --live-api"))
+
+
+@pytest.fixture
+def live_api_key() -> str:
+    key = os.environ.get("CONNECTED_PAPERS_API_KEY", "").strip()
+    if not key:
+        pytest.skip("real-paper tests require CONNECTED_PAPERS_API_KEY")
+    return key
 
 
 @pytest.fixture(autouse=True)

@@ -390,7 +390,12 @@ The SDK uses `nest-asyncio2` for nested event-loop support, including synchronou
 calls from notebooks. Its Python 3.14 task-tracking fix keeps `aiohttp` requests
 working on Python 3.14 and 3.15. The SDK's Python minimum remains 3.8.1.
 
-Existing live tests are explicitly opt-in: `python -m pytest --live-api -m integration`.
-They contact the real service and may consume graph quota. Their existing
-`ENABLE_SLOW_TEST` and `TEST_REAL_PAPERS` switches still apply. Never enable these
-tests in ordinary CI.
+Live tests are explicitly opt-in: `python -m pytest --live-api -m integration`.
+They use the production API by default; `CONNECTED_PAPERS_REST_API` can select
+another endpoint. The fake-paper tests use the bundled test token. Real-paper
+tests require an explicit `CONNECTED_PAPERS_API_KEY` and are reported as skipped
+when it is absent; they may consume that key's graph quota. The bulk real-paper
+test additionally requires `TEST_REAL_PAPERS` to be set and is otherwise skipped.
+The old wall-clock timing test has been removed; polling and retry behavior are
+covered by the offline suite. Never enable live tests in ordinary CI or provide
+API keys to untrusted pull-request code.

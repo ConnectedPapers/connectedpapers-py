@@ -10,8 +10,8 @@ DEEPFRUITS_PAPER_ID = "9397e7acd062245d37350f5c05faf56e9cfae0d6"
 pytestmark = pytest.mark.integration
 
 
-def test_graph_structure() -> None:
-    connected_papers_api = ConnectedPapersClient()
+def test_graph_structure(live_api_key: str) -> None:
+    connected_papers_api = ConnectedPapersClient(access_token=live_api_key)
     deepfruits_graph = connected_papers_api.get_graph_sync(
         DEEPFRUITS_PAPER_ID, fresh_only=True
     )
@@ -43,11 +43,12 @@ PAPER_IDS_LIST = [
 
 
 @pytest.mark.asyncio
-async def test_get_many_papers() -> None:
-    if "TEST_REAL_PAPERS" not in os.environ:
-        return
+@pytest.mark.skipif(
+    "TEST_REAL_PAPERS" not in os.environ, reason="requires TEST_REAL_PAPERS"
+)
+async def test_get_many_papers(live_api_key: str) -> None:
     promises = []
-    connected_papers_api = ConnectedPapersClient()
+    connected_papers_api = ConnectedPapersClient(access_token=live_api_key)
     for paper_id in PAPER_IDS_LIST:
         promises.append(connected_papers_api.get_graph_async(paper_id))
     results = await asyncio.gather(*promises)
