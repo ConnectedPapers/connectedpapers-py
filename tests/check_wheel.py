@@ -46,7 +46,7 @@ def main() -> None:
             "from importlib import metadata, resources; "
             "from pathlib import Path; import sysconfig; import connectedpapers; "
             "package = Path(connectedpapers.__file__).resolve(); "
-            "assert package.is_relative_to(Path(sysconfig.get_path('purelib'))); "
+            "assert package.is_relative_to(Path(sysconfig.get_path('purelib')).resolve()); "
             "assert resources.files('connectedpapers').joinpath('py.typed').is_file(); "
             "dist = metadata.distribution('connectedpapers-py'); "
             "assert dist.metadata['Requires-Python'] == '>=3.11'; "
