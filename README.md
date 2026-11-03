@@ -2,9 +2,24 @@
 The official python client for the connected papers API.
 
 # Installation
+Requires Python 3.11 or newer.
+
 ```bash
 pip install connectedpapers-py
 ```
+
+## Python support policy
+
+We support every stable CPython version that still receives upstream security
+fixes, including versions in either bugfix or security maintenance according to
+the [official Python lifecycle](https://devguide.python.org/versions/). As of
+3 November 2026, this means Python 3.11–3.15.
+
+During maintenance, add newly released stable versions to CI and retain older
+versions until upstream security support ends. When a version reaches end of
+life, update the package minimum, CI matrix and this README together. Do not
+raise the minimum merely to match the backend runtime or simplify a dependency
+refresh while that Python version still receives security fixes.
 
 # Usage
 
@@ -373,22 +388,44 @@ The script validates the API integration by fetching the test paper (DEEPFRUITS)
 
 ## Development and CI
 
-Install the SDK and test tools with
-`python -m pip install . 'pytest>=7.4,<8' 'pytest-asyncio>=0.21,<0.22' build`.
+Use Python 3.11+ and Poetry 2.5.1 for the reproducible development environment:
+
+```bash
+poetry sync
+poetry check --lock
+bash lint_and_test.sh
+```
+
+The check script runs formatting checks, strict typing, lint and offline tests;
+it stops on the first failure and does not modify source files. To apply
+formatting explicitly, use `poetry run black connectedpapers tests usage_samples`
+and `poetry run isort connectedpapers tests usage_samples`.
+
+For a clean consumer-style environment, upgrade pip to 25.1+ and run
+`python -m pip install . --group test`. The test tools are declared in
+`pyproject.toml` and are not installed as SDK runtime dependencies.
 `python -m pytest` runs offline tests against a local HTTP server and records
 retry delays without waiting. External connections are blocked in offline tests.
 No API credentials or graph quota are needed.
 
-CI covers the declared Python 3.8 minimum minor (latest patch) and each released minor through 3.15,
-builds the wheel and source distribution, and checks the installed wheel outside
-the checkout. Lint runs on Python 3.11. CI resolves compatible runtime dependencies
-from package metadata, as consumers do; it does not reuse the old development
-Poetry lock across all Python versions. Updating that lock's security advisories
-is a separate task.
+CI validates the committed Poetry lock, lint and tests on Python 3.11. Separate
+package jobs build wheel/sdist and run the offline suite against a fresh wheel
+installation outside the checkout on Python 3.11–3.15, including Windows
+on the minimum and newest supported minors. Wheel installs resolve runtime
+dependencies from package metadata as consumers do. To reproduce locally, run
+`python -m build` followed by `python tests/check_wheel.py`.
 
 The SDK uses `nest-asyncio2` for nested event-loop support, including synchronous
 calls from notebooks. Its Python 3.14 task-tracking fix keeps `aiohttp` requests
-working on Python 3.14 and 3.15. The SDK's Python minimum remains 3.8.1.
+working on Python 3.14 and 3.15.
+
+### Unreleased maintenance changes
+
+- Raise the supported Python minimum from 3.8.1 to 3.11, following the upstream
+  security-maintenance policy above. Older interpreters must
+  use an earlier SDK release; publishing this update is a separate step.
+- Refresh aiohttp, dacite, build/development tools and the full Poetry lock.
+- Remove the unused Requests runtime dependency; HTTP calls use aiohttp.
 
 Live tests are explicitly opt-in: `python -m pytest --live-api -m integration`.
 They use the production API by default; `CONNECTED_PAPERS_REST_API` can select
