@@ -3,6 +3,7 @@ Graph data structures for Connected Papers API responses.
 
 This module defines the dataclasses used to represent paper graphs returned by the API.
 """
+
 import dataclasses
 from typing import Any, Dict, List, Optional, Union
 
