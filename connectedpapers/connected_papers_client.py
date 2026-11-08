@@ -1,7 +1,9 @@
 import asyncio
 import dataclasses
+import logging
 import sys
 import typing
+import uuid
 from enum import Enum
 from typing import Any, AsyncIterator, List, Optional
 
@@ -9,7 +11,12 @@ import aiohttp
 import dacite
 import nest_asyncio2  # type: ignore
 
-from .consts import ACCESS_TOKEN, CONNECTED_PAPERS_REST_API
+from .consts import (
+    ACCESS_TOKEN,
+    CONNECTED_PAPERS_REST_API,
+    DEFAULT_REST_API,
+    TEST_TOKEN,
+)
 from .graph import Graph, PaperID
 
 if sys.platform == "win32":
@@ -64,7 +71,21 @@ class ConnectedPapersClient:
         retry_on_overload: bool = True,
         verbose: bool = False,
     ) -> None:
-        self.access_token = access_token
+        self.access_token = access_token.strip()
+        # The production API also accepts the literal TEST_TOKEN for its public demo.
+        if (
+            server_addr.rstrip("/") == DEFAULT_REST_API
+            and self.access_token != TEST_TOKEN
+        ):
+            try:
+                self.access_token = str(uuid.UUID(self.access_token))
+            except ValueError:
+                message = (
+                    "Invalid Connected Papers API key format. Expected a UUID or TEST_TOKEN. "
+                    "Check that you copied the complete key without surrounding quotes."
+                )
+                logging.getLogger(__name__).error(message)
+                raise ValueError(message) from None
         self.server_addr = server_addr
         self.nested_asyncio: bool = True
         self.retry_on_overload = retry_on_overload
