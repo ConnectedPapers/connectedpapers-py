@@ -54,9 +54,11 @@ class LocalAPI:
     def reply(self, payload: Any, status: int = 200) -> None:
         self.responses.append((status, json.dumps(payload)))
 
-    def client(self, **kwargs: Any) -> ConnectedPapersClient:
+    def client(
+        self, access_token: str = "local-key", **kwargs: Any
+    ) -> ConnectedPapersClient:
         return ConnectedPapersClient(
-            access_token="local-key", server_addr=self.url, **kwargs
+            access_token=access_token, server_addr=self.url, **kwargs
         )
 
 

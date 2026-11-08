@@ -6,7 +6,9 @@ from typing import Any
 import pytest
 from dacite import MissingValueError
 
+from connectedpapers import ConnectedPapersClient
 from connectedpapers.connected_papers_client import GraphResponseStatuses as Status
+from connectedpapers.consts import DEFAULT_REST_API
 from connectedpapers.graph import CommonAuthor, Graph
 from tests.conftest import LocalAPI
 
@@ -81,9 +83,24 @@ def test_account_endpoints(
     api: LocalAPI, mode: str, method: str, path: str, payload: Any, expected: Any
 ) -> None:
     api.reply(payload)
-    call = getattr(api.client(), method + "_" + mode)
+    call = getattr(api.client(access_token=" \tlocal-key\r\n"), method + "_" + mode)
     assert (call() if mode == "sync" else run_async(call())) == expected
     assert api.requests == [("/papers-api/" + path, "local-key")]
+
+
+@pytest.mark.parametrize("key", ["TEST_TOKEN", "2d1e64bf-bf8f-4996-82ca-1f03f72e55d0"])
+def test_production_key_accepts_surrounding_whitespace(key: str) -> None:
+    client = ConnectedPapersClient(
+        access_token=f" \t{key}\r\n", server_addr=DEFAULT_REST_API
+    )
+    assert client.access_token == key
+
+
+def test_production_key_error_does_not_expose_key() -> None:
+    key = '"not-a-uuid"'
+    with pytest.raises(ValueError, match="must be a UUID or TEST_TOKEN") as error:
+        ConnectedPapersClient(access_token=key, server_addr=DEFAULT_REST_API)
+    assert key not in str(error.value)
 
 
 @pytest.mark.parametrize("method", ["get_remaining_usages", "get_free_access_papers"])
