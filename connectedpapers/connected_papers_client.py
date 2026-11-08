@@ -1,5 +1,6 @@
 import asyncio
 import dataclasses
+import logging
 import sys
 import typing
 import uuid
@@ -71,17 +72,20 @@ class ConnectedPapersClient:
         verbose: bool = False,
     ) -> None:
         self.access_token = access_token.strip()
+        # The production API also accepts the literal TEST_TOKEN for its public demo.
         if (
             server_addr.rstrip("/") == DEFAULT_REST_API
             and self.access_token != TEST_TOKEN
         ):
             try:
-                uuid.UUID(self.access_token)
+                self.access_token = str(uuid.UUID(self.access_token))
             except ValueError:
-                raise ValueError(
-                    "The Connected Papers API key must be a UUID or TEST_TOKEN. "
+                message = (
+                    "Invalid Connected Papers API key format. Expected a UUID or TEST_TOKEN. "
                     "Check that you copied the complete key without surrounding quotes."
-                ) from None
+                )
+                logging.getLogger(__name__).error(message)
+                raise ValueError(message) from None
         self.server_addr = server_addr
         self.nested_asyncio: bool = True
         self.retry_on_overload = retry_on_overload

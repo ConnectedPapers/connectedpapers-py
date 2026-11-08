@@ -88,19 +88,31 @@ def test_account_endpoints(
     assert api.requests == [("/papers-api/" + path, "local-key")]
 
 
-@pytest.mark.parametrize("key", ["TEST_TOKEN", "2d1e64bf-bf8f-4996-82ca-1f03f72e55d0"])
-def test_production_key_accepts_surrounding_whitespace(key: str) -> None:
+@pytest.mark.parametrize(
+    "key,expected",
+    [
+        ("TEST_TOKEN", "TEST_TOKEN"),
+        ("2D1E64BFBF8F499682CA1F03F72E55D0", "2d1e64bf-bf8f-4996-82ca-1f03f72e55d0"),
+    ],
+)
+def test_production_key_is_normalized(key: str, expected: str) -> None:
     client = ConnectedPapersClient(
         access_token=f" \t{key}\r\n", server_addr=DEFAULT_REST_API
     )
-    assert client.access_token == key
+    assert client.access_token == expected
 
 
-def test_production_key_error_does_not_expose_key() -> None:
+def test_production_key_error_does_not_expose_key(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     key = '"not-a-uuid"'
-    with pytest.raises(ValueError, match="must be a UUID or TEST_TOKEN") as error:
+    with pytest.raises(
+        ValueError, match="Invalid Connected Papers API key format"
+    ) as error:
         ConnectedPapersClient(access_token=key, server_addr=DEFAULT_REST_API)
     assert key not in str(error.value)
+    assert str(error.value) in caplog.messages
+    assert key not in caplog.text
 
 
 @pytest.mark.parametrize("method", ["get_remaining_usages", "get_free_access_papers"])
